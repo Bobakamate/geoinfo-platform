@@ -217,7 +217,58 @@ export default function LoginPage() {
 
           {/* Right Side - 3D Illustration (reste identique) */}
           <div className="hidden md:flex items-center justify-center bg-linear-to-br from-blue-500 via-purple-500 to-pink-500 p-12 relative overflow-hidden">
-            {/* ... votre illustration 3D ... */}
+            {/* 3D Key Illustration */}
+            <div className="relative z-10 w-full max-w-md">
+              <div className="relative aspect-square">
+                {/* Background Grid */}
+                <div className="absolute inset-0 grid grid-cols-6 gap-2 opacity-30">
+                  {Array.from({ length: 36 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white/10 rounded backdrop-blur-sm"
+                      style={{
+                        animation: `pulse ${2 + (i % 4)}s infinite`,
+                        animationDelay: `${i * 0.1}s`,
+                      }}
+                    ></div>
+                  ))}
+                </div>
+
+                {/* Central Key Icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative">
+                    {/* Lock Circle */}
+                    <div className="w-48 h-48 rounded-full bg-linear-to-br from-blue-400/20 to-purple-400/20 backdrop-blur-xl border-2 border-white/30 flex items-center justify-center animate-float">
+                      <div className="w-32 h-32 rounded-full bg-linear-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-600 to-purple-600"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Floating Key */}
+                    <div className="absolute -top-8 -right-8 w-24 h-24 bg-linear-to-br from-orange-400 to-orange-600 rounded-xl rotate-45 animate-bounce-slow flex items-center justify-center shadow-2xl">
+                      <div className="w-12 h-4 bg-white rounded-full -rotate-45"></div>
+                    </div>
+
+                    {/* Floating Elements */}
+                    <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-linear-to-br from-pink-400 to-pink-600 rounded-lg animate-float-delayed shadow-xl"></div>
+                    <div className="absolute top-1/2 -right-12 w-20 h-20 bg-linear-to-br from-cyan-400 to-blue-500 rounded-2xl animate-spin-slow shadow-xl"></div>
+                    <div className="absolute -top-6 left-1/4 w-12 h-12 bg-white/30 backdrop-blur-sm rounded-lg animate-pulse"></div>
+                  </div>
+                </div>
+
+                {/* Login Arrow Button */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+                  <Button
+                    size="lg"
+                    className="rounded-full h-16 px-8 bg-linear-to-r from-green-400 to-cyan-400 hover:from-green-500 hover:to-cyan-500 text-white font-bold text-lg shadow-2xl animate-pulse"
+                  >
+                    <ArrowRight className="h-6 w-6" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

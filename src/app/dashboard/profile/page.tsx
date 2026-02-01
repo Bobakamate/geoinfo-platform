@@ -25,6 +25,7 @@ import {
 import { useState } from "react"
 import coursesData from "@/lib/data/courses.json"
 import { CourseCard } from "@/components/ui/CourseCard"
+import { useSession } from "next-auth/react"
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -38,6 +39,8 @@ export default function ProfilePage() {
     level: "Master 2",
     specialization: "Géomatique et Aménagement du Territoire",
   })
+  const { data: session } = useSession()
+  
 
   const enrolledCourses = coursesData.courses.slice(0, 6)
 
@@ -111,7 +114,7 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative">
               <Avatar className="h-32 w-32 border-4 border-background ring-2 ring-purple-600">
-                <AvatarImage src="/avatars/user.jpg" />
+                <AvatarImage src={session?.user?.image || "/avatars/user.jpg"} />
                 <AvatarFallback className="bg-linear-to-br from-purple-600 to-blue-600 text-white text-4xl">
                   JD
                 </AvatarFallback>
@@ -128,7 +131,7 @@ export default function ProfilePage() {
             <div className="flex-1 mt-16 md:mt-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
                 <div>
-                  <h1 className="text-3xl font-bold">{profileData.name}</h1>
+                  <h1 className="text-3xl font-bold">{session?.user?.name}</h1>
                   <p className="text-muted-foreground">{profileData.specialization}</p>
                 </div>
                 <Button

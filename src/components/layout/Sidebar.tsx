@@ -20,11 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const menuItems = [
-  {
-    label: "Profil",
-    icon: LayoutDashboard,
-    href: "dashboard/profile",
-  },
+ 
   {
     label: "Courses",
     icon: BookOpen,
@@ -86,47 +82,7 @@ export function Sidebar() {
         </nav>
       </ScrollArea>
 
-      {/* User Profile */}
-      <div className="border-t border-gray-800 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="/avatars/user.jpg" />
-            <AvatarFallback className="bg-purple-600 text-white">JD</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">John Doe</p>
-            <p className="text-xs text-gray-400 truncate">john.doe@email.com</p>
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <Link href="/dashboard/profile">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-gray-300 hover:text-white hover:bg-gray-800 text-sm"
-            >
-              <User className="h-4 w-4" />
-              Profile
-            </Button>
-          </Link>
-          <Link href="/dashboard/settings">
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-gray-300 hover:text-white hover:bg-gray-800 text-sm"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-gray-300 hover:text-white hover:bg-gray-800 text-sm"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-      </div>
+      
     </div>
   )
 }

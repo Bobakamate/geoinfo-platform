@@ -388,7 +388,7 @@ export default function TeachersPage() {
                     <span>{teacher.location.split(",")[0]}</span>
                   </div>
                   <div className="font-bold text-lg text-purple-600 dark:text-purple-400">
-                    ${teacher.hourlyRate}/hr
+                    {}
                   </div>
                 </div>
 
