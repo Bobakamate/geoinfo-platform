@@ -1,0 +1,190 @@
+{
+  "courses": [
+    {
+      "id": "1",
+      "title": "Introduction aux Systèmes d'Information Géographique (SIG)",
+      "description": "Découvrez les fondamentaux des SIG, l'analyse spatiale et la cartographie numérique avec QGIS et ArcGIS.",
+      "level": "Beginner",
+      "students": 234,
+      "rating": 4.8,
+      "image": "/courses/sig-intro.jpg",
+      "instructor": {
+        "name": "Dr. Marie Dupont",
+        "avatar": "/avatars/marie.jpg"
+      },
+      "category": "SIG",
+      "duration": "12 weeks",
+      "lessons": 45
+    },
+    {
+      "id": "2",
+      "title": "Géodésie et Systèmes de Référence Spatial",
+      "description": "Maîtrisez les concepts de géodésie, projections cartographiques, et systèmes de coordonnées.",
+      "level": "Intermediate",
+      "students": 167,
+      "rating": 4.9,
+      "image": "/courses/geodesie.jpg",
+      "instructor": {
+        "name": "Prof. Jean Lambert",
+        "avatar": "/avatars/jean.jpg"
+      },
+      "category": "Géodésie",
+      "duration": "10 weeks",
+      "lessons": 38
+    },
+    {
+      "id": "3",
+      "title": "Topographie Moderne et Levés Terrain",
+      "description": "Apprenez les techniques de levés topographiques avec stations totales, GPS RTK et drones.",
+      "level": "Beginner",
+      "students": 198,
+      "rating": 4.7,
+      "image": "/courses/topographie.jpg",
+      "instructor": {
+        "name": "Marc Rousseau",
+        "avatar": "/avatars/marc.jpg"
+      },
+      "category": "Topographie",
+      "duration": "8 weeks",
+      "lessons": 32
+    },
+    {
+      "id": "4",
+      "title": "Télédétection et Traitement d'Images Satellites",
+      "description": "Analysez des images satellites et aériennes pour l'observation de la Terre avec ENVI et Google Earth Engine.",
+      "level": "Advanced",
+      "students": 145,
+      "rating": 5.0,
+      "image": "/courses/teledetection.jpg",
+      "instructor": {
+        "name": "Dr. Sophie Martin",
+        "avatar": "/avatars/sophie.jpg"
+      },
+      "category": "Télédétection",
+      "duration": "14 weeks",
+      "lessons": 52
+    },
+    {
+      "id": "5",
+      "title": "Bases de Données Spatiales avec PostGIS",
+      "description": "Créez et gérez des bases de données spatiales performantes avec PostgreSQL et PostGIS.",
+      "level": "Intermediate",
+      "students": 212,
+      "rating": 4.6,
+      "image": "/courses/postgis.jpg",
+      "instructor": {
+        "name": "Thomas Lefebvre",
+        "avatar": "/avatars/thomas.jpg"
+      },
+      "category": "Bases de données",
+      "duration": "6 weeks",
+      "lessons": 28
+    },
+    {
+      "id": "6",
+      "title": "Cartographie Web avec Leaflet et Mapbox",
+      "description": "Développez des applications cartographiques interactives pour le web moderne.",
+      "level": "Intermediate",
+      "students": 289,
+      "rating": 4.8,
+      "image": "/courses/webmapping.jpg",
+      "instructor": {
+        "name": "Laura Bernard",
+        "avatar": "/avatars/laura.jpg"
+      },
+      "category": "Développement web",
+      "duration": "8 weeks",
+      "lessons": 36
+    },
+    {
+      "id": "7",
+      "title": "Photogrammétrie et Modélisation 3D",
+      "description": "Créez des modèles 3D précis à partir de photos aériennes et terrestres.",
+      "level": "Advanced",
+      "students": 134,
+      "rating": 4.9,
+      "image": "/courses/photogrammetrie.jpg",
+      "instructor": {
+        "name": "Dr. Pierre Dubois",
+        "avatar": "/avatars/pierre.jpg"
+      },
+      "category": "Photogrammétrie",
+      "duration": "10 weeks",
+      "lessons": 42
+    },
+    {
+      "id": "8",
+      "title": "Python pour la Géomatique",
+      "description": "Automatisez vos traitements géospatiaux avec Python, GDAL, Shapely et GeoPandas.",
+      "level": "Intermediate",
+      "students": 321,
+      "rating": 4.7,
+      "image": "/courses/python-geo.jpg",
+      "instructor": {
+        "name": "Alexandre Chen",
+        "avatar": "/avatars/alex.jpg"
+      },
+      "category": "Programmation",
+      "duration": "12 weeks",
+      "lessons": 48
+    },
+    {
+      "id": "9",
+      "title": "Analyse Spatiale Avancée",
+      "description": "Techniques d'analyse spatiale : interpolation, autocorrélation, modélisation géostatistique.",
+      "level": "Advanced",
+      "students": 98,
+      "rating": 5.0,
+      "image": "/courses/analyse-spatiale.jpg",
+      "instructor": {
+        "name": "Dr. Isabelle Moreau",
+        "avatar": "/avatars/isabelle.jpg"
+      },
+      "category": "Analyse",
+      "duration": "10 weeks",
+      "lessons": 40
+    },
+    {
+      "id": "10",
+      "title": "LiDAR et Nuages de Points",
+      "description": "Traitement et analyse de données LiDAR pour la modélisation du terrain et la végétation.",
+      "level": "Advanced",
+      "students": 112,
+      "rating": 4.8,
+      "image": "/courses/lidar.jpg",
+      "instructor": {
+        "name": "François Garnier",
+        "avatar": "/avatars/francois.jpg"
+      },
+      "category": "Télédétection",
+      "duration": "8 weeks",
+      "lessons": 35
+    }
+  ],
+  "categories": [
+    "SIG",
+    "Géodésie",
+    "Topographie",
+    "Télédétection",
+    "Bases de données",
+    "Développement web",
+    "Développement mobile",
+    "Photogrammétrie",
+    "Programmation",
+    "Analyse"
+  ],
+  "instructors": [
+    {
+      "name": "Violette Heldenreich",
+      "role": "Economics teacher",
+      "avatar": "/avatars/violette.jpg",
+      "rating": 4.9,
+      "students": 250,
+      "courses": 24,
+      "lessons": 132,
+      "price": 32,
+      "tags": ["Business", "Economics", "Management"],
+      "bio": "Dive into the fundamentals of economics: supply, demand, and more. How to understand the market? I will tell you about..."
+    }
+  ]
+}
