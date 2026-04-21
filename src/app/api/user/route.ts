@@ -43,8 +43,7 @@ export async function GET(req: Request) {
         email: user.email,
         image: user.image,
         emailVerified: user.emailVerified,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+        createdAt: user.createdAt
       },
     });
   } catch (error) {

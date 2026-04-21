@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,36 +17,129 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Map, Eye, EyeOff, Mail, User, GraduationCap, Building2, MapPin } from "lucide-react"
-import { useRouter } from "next/navigation"
+import {
+  Map,
+  Eye,
+  EyeOff,
+  Mail,
+  User,
+  GraduationCap,
+  Loader2,
+} from "lucide-react"
+import { toast } from "sonner"
+import { ApiClient } from "@/lib/ApiClient"
+
+// ── Types locaux ──────────────────────────────────────────────────────────────
+
+interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  confirmPassword: string
+  level: string
+  agreeToTerms: boolean
+}
+
+const INITIAL_FORM: FormData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  level: "",
+  agreeToTerms: false,
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function validateForm(data: FormData): string | null {
+  if (!data.firstName.trim() || !data.lastName.trim()) {
+    return "Veuillez renseigner votre prénom et nom"
+  }
+  if (!data.email.trim()) {
+    return "Veuillez renseigner votre email"
+  }
+  if (data.password.length < 8) {
+    return "Le mot de passe doit contenir au moins 8 caractères"
+  }
+  if (data.password !== data.confirmPassword) {
+    return "Les mots de passe ne correspondent pas"
+  }
+  if (!data.agreeToTerms) {
+    return "Vous devez accepter les conditions d'utilisation"
+  }
+  return null
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    university: "",
-    level: "",
-    specialization: "",
-    country: "",
-    agreeToTerms: false,
-  })
+  const [formData, setFormData] = useState<FormData>(INITIAL_FORM)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleChange = (field: string, value: string | boolean) => {
-    setFormData({ ...formData, [field]: value })
+  const handleChange = (field: keyof FormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulation d'inscription - en production, vous feriez une vraie requête API
-    console.log("Registration data:", formData)
-    router.push("/dashboard")
+
+    // Validation côté client
+    const validationError = validateForm(formData)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // 1. Créer le compte via l'API
+      const { data, error } = await ApiClient.register({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        level: formData.level || undefined,
+      })
+
+      if (error) {
+        toast.error(error)
+        return
+      }
+
+      toast.success("Compte créé ! Connexion en cours...")
+
+      // 2. Connexion automatique après inscription
+      const result = await signIn("credentials", {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        // Compte créé mais auto-login échoué → rediriger vers login
+        toast.warning("Compte créé. Veuillez vous connecter manuellement.")
+        router.push("/login")
+        return
+      }
+
+      toast.success(`Bienvenue ${data?.userId ? "" : formData.firstName} !`)
+      router.push("/dashboard")
+      router.refresh()
+    } catch (error) {
+      console.error("Erreur inscription:", error)
+      toast.error("Erreur inattendue, veuillez réessayer")
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-violet-50 via-purple-50 to-blue-50 dark:from-gray-950 dark:via-purple-950 dark:to-blue-950 p-4">
@@ -54,7 +149,7 @@ export default function RegisterPage() {
 
       <Card className="w-full max-w-5xl overflow-hidden shadow-2xl border-2">
         <div className="grid md:grid-cols-2 gap-0">
-          {/* Left Side - Registration Form */}
+          {/* ── Left Side — Registration Form ─────────────────────────────── */}
           <div className="p-8 md:p-12 bg-white dark:bg-gray-900">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-6">
@@ -84,7 +179,7 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name Fields */}
+              {/* Name */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName" className="text-sm font-medium">
@@ -99,6 +194,8 @@ export default function RegisterPage() {
                       onChange={(e) => handleChange("firstName", e.target.value)}
                       className="h-11 pl-4 pr-10"
                       required
+                      disabled={isLoading}
+                      autoComplete="given-name"
                     />
                     <User className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
@@ -116,6 +213,8 @@ export default function RegisterPage() {
                     onChange={(e) => handleChange("lastName", e.target.value)}
                     className="h-11 pl-4"
                     required
+                    disabled={isLoading}
+                    autoComplete="family-name"
                   />
                 </div>
               </div>
@@ -134,12 +233,14 @@ export default function RegisterPage() {
                     onChange={(e) => handleChange("email", e.target.value)}
                     className="h-11 pl-4 pr-10"
                     required
+                    disabled={isLoading}
+                    autoComplete="email"
                   />
                   <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
               </div>
 
-              {/* Password Fields */}
+              {/* Passwords */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium">
@@ -154,6 +255,8 @@ export default function RegisterPage() {
                       onChange={(e) => handleChange("password", e.target.value)}
                       className="h-11 pl-4 pr-10"
                       required
+                      disabled={isLoading}
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -167,10 +270,20 @@ export default function RegisterPage() {
                       )}
                     </button>
                   </div>
+                  {/* Password strength hint */}
+                  {formData.password.length > 0 &&
+                    formData.password.length < 8 && (
+                      <p className="text-xs text-red-500">
+                        8 caractères minimum
+                      </p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium"
+                  >
                     Confirm Password
                   </Label>
                   <div className="relative">
@@ -184,6 +297,8 @@ export default function RegisterPage() {
                       }
                       className="h-11 pl-4 pr-10"
                       required
+                      disabled={isLoading}
+                      autoComplete="new-password"
                     />
                     <button
                       type="button"
@@ -199,29 +314,17 @@ export default function RegisterPage() {
                       )}
                     </button>
                   </div>
+                  {/* Match hint */}
+                  {formData.confirmPassword.length > 0 &&
+                    formData.password !== formData.confirmPassword && (
+                      <p className="text-xs text-red-500">
+                        Les mots de passe ne correspondent pas
+                      </p>
+                    )}
                 </div>
               </div>
 
-              {/* University */}
-              <div className="space-y-2">
-                <Label htmlFor="university" className="text-sm font-medium">
-                  University / Institution
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="university"
-                    type="text"
-                    placeholder="Your university name"
-                    value={formData.university}
-                    onChange={(e) => handleChange("university", e.target.value)}
-                    className="h-11 pl-4 pr-10"
-                    required
-                  />
-                  <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Level and Specialization */}
+              {/* Level */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="level" className="text-sm font-medium">
@@ -230,76 +333,21 @@ export default function RegisterPage() {
                   <Select
                     value={formData.level}
                     onValueChange={(value) => handleChange("level", value)}
+                    disabled={isLoading}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bachelor1">Bachelor Year 1</SelectItem>
-                      <SelectItem value="bachelor2">Bachelor Year 2</SelectItem>
-                      <SelectItem value="bachelor3">Bachelor Year 3</SelectItem>
-                      <SelectItem value="master1">Master Year 1</SelectItem>
-                      <SelectItem value="master2">Master Year 2</SelectItem>
-                      <SelectItem value="phd">PhD</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="specialization" className="text-sm font-medium">
-                    Specialization
-                  </Label>
-                  <Select
-                    value={formData.specialization}
-                    onValueChange={(value) =>
-                      handleChange("specialization", value)
-                    }
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gis">GIS & Cartography</SelectItem>
-                      <SelectItem value="geodesy">Geodesy</SelectItem>
-                      <SelectItem value="topography">Topography</SelectItem>
-                      <SelectItem value="remote-sensing">
-                        Remote Sensing
-                      </SelectItem>
-                      <SelectItem value="photogrammetry">
-                        Photogrammetry
-                      </SelectItem>
-                      <SelectItem value="spatial-analysis">
-                        Spatial Analysis
-                      </SelectItem>
-                      <SelectItem value="geomatics-general">
-                        General Geomatics
-                      </SelectItem>
+                      <SelectItem value="bachelor1">Year 1</SelectItem>
+                      <SelectItem value="bachelor2">Year 2</SelectItem>
+                      <SelectItem value="bachelor3">Year 3</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Country */}
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-sm font-medium">
-                  Country
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="country"
-                    type="text"
-                    placeholder="Your country"
-                    value={formData.country}
-                    onChange={(e) => handleChange("country", e.target.value)}
-                    className="h-11 pl-4 pr-10"
-                    required
-                  />
-                  <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Terms & Conditions */}
+              {/* Terms */}
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="terms"
@@ -307,6 +355,7 @@ export default function RegisterPage() {
                   onCheckedChange={(checked) =>
                     handleChange("agreeToTerms", checked as boolean)
                   }
+                  disabled={isLoading}
                   required
                 />
                 <Label
@@ -330,29 +379,34 @@ export default function RegisterPage() {
                 </Label>
               </div>
 
-              {/* Register Button */}
+              {/* Submit */}
               <Button
                 type="submit"
                 className="w-full h-12 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-base font-semibold"
-                disabled={!formData.agreeToTerms}
+                disabled={isLoading || !formData.agreeToTerms}
               >
-                Create Account
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Création du compte...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
           </div>
 
-          {/* Right Side - Illustration */}
+          {/* ── Right Side — Illustration ──────────────────────────────────── */}
           <div className="hidden md:flex items-center justify-center bg-linear-to-br from-purple-500 via-blue-500 to-cyan-500 p-12 relative overflow-hidden">
-            <div className="absolute inset-0 bg-grid-white/10"></div>
+            <div className="absolute inset-0 bg-grid-white/10" />
 
             <div className="relative z-10 text-white text-center max-w-md">
               <div className="mb-8">
                 <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm mb-6">
                   <GraduationCap className="h-12 w-12" />
                 </div>
-                <h2 className="text-4xl font-bold mb-4">
-                  Join Our Community
-                </h2>
+                <h2 className="text-4xl font-bold mb-4">Join Our Community</h2>
                 <p className="text-lg text-purple-100 mb-6">
                   Connect with fellow geomatics students and professionals from
                   around the world
@@ -360,55 +414,37 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-4 text-left">
-                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-                    ✓
+                {[
+                  {
+                    title: "Access 50+ Courses",
+                    desc: "Learn GIS, Remote Sensing, Geodesy, and more",
+                  },
+                  {
+                    title: "Expert Instructors",
+                    desc: "Learn from industry professionals and professors",
+                  },
+                  {
+                    title: "Earn Certificates",
+                    desc: "Get recognized for your achievements",
+                  },
+                  {
+                    title: "Community Support",
+                    desc: "Connect with 2,500+ students worldwide",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
+                      ✓
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-1">{item.title}</h3>
+                      <p className="text-sm text-purple-100">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Access 50+ Courses</h3>
-                    <p className="text-sm text-purple-100">
-                      Learn GIS, Remote Sensing, Geodesy, and more
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-                    ✓
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Expert Instructors</h3>
-                    <p className="text-sm text-purple-100">
-                      Learn from industry professionals and professors
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-                    ✓
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Earn Certificates</h3>
-                    <p className="text-sm text-purple-100">
-                      Get recognized for your achievements
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-1">
-                    ✓
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">
-                      Community Support
-                    </h3>
-                    <p className="text-sm text-purple-100">
-                      Connect with 2,500+ students worldwide
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

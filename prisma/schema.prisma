@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,7 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modèles NextAuth requis
+// ─────────────────────────────────────────
+// NEXTAUTH
+// ─────────────────────────────────────────
+
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
@@ -41,20 +41,6 @@ model Session {
   @@map("sessions")
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  accounts      Account[]
-  sessions      Session[]
-
-  @@map("users")
-}
-
 model VerificationToken {
   identifier String
   token      String
@@ -62,4 +48,204 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────
+// UTILISATEUR
+// ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?   @db.Text
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  profilDetail  String?
+  level         String?
+
+  accounts Account[]
+  sessions Session[]
+
+  // Fil admin
+  comments Comment[]
+  likes    PostLike[]
+
+  // Messagerie privée
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ─────────────────────────────────────────
+// COURS & CONTENU
+// ─────────────────────────────────────────
+
+model Course {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  type        CourseType @default(COURSE)
+  level       Level      @default(BEGINNER)
+  link        String?
+  published   Boolean    @default(false)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  thumbnail   String?
+  duration    Int?       // heures totales estimées
+  semester    Int?       // 1 à 6
+
+  modules     Module[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String   @map("course_id")
+  title       String
+  description String?  @db.Text
+  order       Int      @default(0)
+  hoursCrs    Int?     @map("hours_crs")
+  hoursTd     Int?     @map("hours_td")
+  hoursTp     Int?     @map("hours_tp")
+  hoursAp     Int?     @map("hours_ap")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  course    Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  videos    CourseVideo[]
+  documents CourseDocument[]
+  links     CourseLink[]
+
+  @@map("modules")
+}
+
+// ─── Vidéos YouTube ───────────────────────────────────────────────
+
+model CourseVideo {
+  id          String   @id @default(cuid())
+  moduleId    String   @map("module_id")
+  title       String
+  youtubeUrl  String   @map("youtube_url") @db.Text
+  duration    String?  // ex: "18:42"
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("course_videos")
+}
+
+// ─── Documents Google Drive ───────────────────────────────────────
+
+model CourseDocument {
+  id        String   @id @default(cuid())
+  moduleId  String   @map("module_id")
+  title     String
+  driveUrl  String   @map("drive_url") @db.Text
+  fileType  String?  @map("file_type") // "pdf" | "doc" | "sheet" | "slide" | "other"
+  size      String?  // ex: "2.4 Mo"
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("course_documents")
+}
+
+// ─── Liens externes ───────────────────────────────────────────────
+
+model CourseLink {
+  id          String   @id @default(cuid())
+  moduleId    String   @map("module_id")
+  title       String
+  url         String   @db.Text
+  description String?  @db.Text
+  category    String?  // ex: "Outil" | "Documentation" | "Données"
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("course_links")
+}
+
+
+
+enum CourseType {
+  COURSE
+  RESOURCE
+}
+
+enum Level {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// ─────────────────────────────────────────
+// FIL ADMIN — posts + commentaires + likes
+// ─────────────────────────────────────────
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comments Comment[]
+  likes    PostLike[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  authorId  String   @map("author_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model PostLike {
+  id     String @id @default(cuid())
+  postId String @map("post_id")
+  userId String @map("user_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("post_likes")
+}
+
+// ─────────────────────────────────────────
+// MESSAGERIE PRIVÉE
+// ─────────────────────────────────────────
+
+model Message {
+  id         String    @id @default(cuid())
+  senderId   String    @map("sender_id")
+  receiverId String    @map("receiver_id")
+  content    String    @db.Text
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  sender   User @relation("SentMessages",   fields: [senderId],   references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@map("messages")
 }

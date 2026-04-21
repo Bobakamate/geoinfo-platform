@@ -11,8 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { FcGoogle } from "react-icons/fc"
-import { Map, Eye, EyeOff, Mail, ArrowRight } from "lucide-react"
-import { toast } from "sonner" // ou votre système de toast
+import { Map, Eye, EyeOff, Mail, ArrowRight, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,31 +21,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
-  // Connexion avec Google
+  // ── Google ──────────────────────────────────────────────────────────────────
   const handleGoogleLogin = async () => {
     try {
-      setIsLoading(true)
+      setIsGoogleLoading(true)
       await signIn("google", {
         callbackUrl: "/dashboard",
         redirect: true,
       })
     } catch (error) {
-      console.error("Erreur lors de la connexion Google:", error)
+      console.error("Erreur Google:", error)
       toast.error("Erreur lors de la connexion avec Google")
     } finally {
-      setIsLoading(false)
+      setIsGoogleLoading(false)
     }
   }
 
-  // Connexion avec email/password (si vous l'implémentez plus tard)
+  // ── Credentials ─────────────────────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!email || !password) {
+      toast.error("Veuillez remplir tous les champs")
+      return
+    }
+
     setIsLoading(true)
-    
+
     try {
-      // Si vous voulez implémenter l'authentification par email/password
-      // vous devrez ajouter le provider Credentials dans auth.ts
       const result = await signIn("credentials", {
         email,
         password,
@@ -53,17 +58,35 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        toast.error("Email ou mot de passe incorrect")
-      } else {
-        router.push("/dashboard")
+        // NextAuth renvoie le message lancé dans authorize()
+        switch (result.error) {
+          case "Email et mot de passe requis":
+            toast.error("Veuillez remplir tous les champs")
+            break
+          case "Aucun compte trouvé avec cet email":
+            toast.error("Aucun compte associé à cet email")
+            break
+          case "Mot de passe incorrect":
+            toast.error("Mot de passe incorrect")
+            break
+          default:
+            toast.error("Identifiants invalides")
+        }
+        return
       }
+
+      toast.success("Connexion réussie !")
+      router.push("/dashboard")
+      router.refresh()
     } catch (error) {
       console.error("Erreur de connexion:", error)
-      toast.error("Erreur lors de la connexion")
+      toast.error("Erreur inattendue, veuillez réessayer")
     } finally {
       setIsLoading(false)
     }
   }
+
+  const loading = isLoading || isGoogleLoading
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-violet-50 via-purple-50 to-blue-50 dark:from-gray-950 dark:via-purple-950 dark:to-blue-950 p-4">
@@ -71,9 +94,9 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <Card className="w-full max-w-6xl overflow-hidden shadow-2xl border-2 ">
+      <Card className="w-full max-w-6xl overflow-hidden shadow-2xl border-2">
         <div className="grid md:grid-cols-2 gap-0">
-          {/* Left Side - Login Form */}
+          {/* ── Left Side — Login Form ─────────────────────────────────────── */}
           <div className="p-8 md:p-12 bg-white dark:bg-gray-900">
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-6">
@@ -82,27 +105,31 @@ export default function LoginPage() {
                   GeoInfo Club
                 </span>
               </div>
-              
-              <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-2">
+
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">
                 Welcome back 👋
               </h1>
-              
+
               <p className="text-gray-600 dark:text-gray-400 mb-8">
                 Please enter your details
               </p>
             </div>
 
             <div className="space-y-6">
-              {/* Google Login Button */}
+              {/* Google */}
               <Button
                 type="button"
                 variant="outline"
                 className="w-full h-12 text-base border-2"
                 onClick={handleGoogleLogin}
-                disabled={isLoading}
+                disabled={loading}
               >
-                <FcGoogle className="h-5 w-5" />
-                {isLoading ? "Connexion..." : "Log In with Google"}
+                {isGoogleLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <FcGoogle className="h-5 w-5" />
+                )}
+                {isGoogleLoading ? "Connexion..." : "Log In with Google"}
               </Button>
 
               <div className="relative">
@@ -116,9 +143,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Email/Password Form */}
+              {/* Email / Password */}
               <form onSubmit={handleLogin} className="space-y-6">
-                {/* Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email
@@ -132,13 +158,13 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-12 pl-4 pr-10"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
+                      autoComplete="email"
                     />
                     <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
 
-                {/* Password Input */}
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium">
                     Password
@@ -152,7 +178,8 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="h-12 pl-4 pr-10"
                       required
-                      disabled={isLoading}
+                      disabled={loading}
+                      autoComplete="current-password"
                     />
                     <button
                       type="button"
@@ -168,14 +195,15 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="remember"
                       checked={rememberMe}
-                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                      disabled={isLoading}
+                      onCheckedChange={(checked) =>
+                        setRememberMe(checked as boolean)
+                      }
+                      disabled={loading}
                     />
                     <Label
                       htmlFor="remember"
@@ -192,16 +220,21 @@ export default function LoginPage() {
                   </Link>
                 </div>
 
-                {/* Login Button */}
                 <Button
                   type="submit"
                   className="w-full h-12 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-base font-semibold"
-                  disabled={isLoading}
+                  disabled={loading}
                 >
-                  {isLoading ? "Connexion..." : "Log In"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Connexion...
+                    </>
+                  ) : (
+                    "Log In"
+                  )}
                 </Button>
 
-                {/* Sign Up Link */}
                 <p className="text-center text-sm text-gray-600 dark:text-gray-400">
                   Don't have an account?{" "}
                   <Link
@@ -215,12 +248,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Right Side - 3D Illustration (reste identique) */}
+          {/* ── Right Side — Illustration ──────────────────────────────────── */}
           <div className="hidden md:flex items-center justify-center bg-linear-to-br from-blue-500 via-purple-500 to-pink-500 p-12 relative overflow-hidden">
-            {/* 3D Key Illustration */}
             <div className="relative z-10 w-full max-w-md">
               <div className="relative aspect-square">
-                {/* Background Grid */}
                 <div className="absolute inset-0 grid grid-cols-6 gap-2 opacity-30">
                   {Array.from({ length: 36 }).map((_, i) => (
                     <div
@@ -230,35 +261,28 @@ export default function LoginPage() {
                         animation: `pulse ${2 + (i % 4)}s infinite`,
                         animationDelay: `${i * 0.1}s`,
                       }}
-                    ></div>
+                    />
                   ))}
                 </div>
 
-                {/* Central Key Icon */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="relative">
-                    {/* Lock Circle */}
                     <div className="w-48 h-48 rounded-full bg-linear-to-br from-blue-400/20 to-purple-400/20 backdrop-blur-xl border-2 border-white/30 flex items-center justify-center animate-float">
                       <div className="w-32 h-32 rounded-full bg-linear-to-br from-blue-500/30 to-purple-500/30 flex items-center justify-center">
                         <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
-                          <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-600 to-purple-600"></div>
+                          <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-600 to-purple-600" />
                         </div>
                       </div>
                     </div>
-
-                    {/* Floating Key */}
                     <div className="absolute -top-8 -right-8 w-24 h-24 bg-linear-to-br from-orange-400 to-orange-600 rounded-xl rotate-45 animate-bounce-slow flex items-center justify-center shadow-2xl">
-                      <div className="w-12 h-4 bg-white rounded-full -rotate-45"></div>
+                      <div className="w-12 h-4 bg-white rounded-full -rotate-45" />
                     </div>
-
-                    {/* Floating Elements */}
-                    <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-linear-to-br from-pink-400 to-pink-600 rounded-lg animate-float-delayed shadow-xl"></div>
-                    <div className="absolute top-1/2 -right-12 w-20 h-20 bg-linear-to-br from-cyan-400 to-blue-500 rounded-2xl animate-spin-slow shadow-xl"></div>
-                    <div className="absolute -top-6 left-1/4 w-12 h-12 bg-white/30 backdrop-blur-sm rounded-lg animate-pulse"></div>
+                    <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-linear-to-br from-pink-400 to-pink-600 rounded-lg animate-float-delayed shadow-xl" />
+                    <div className="absolute top-1/2 -right-12 w-20 h-20 bg-linear-to-br from-cyan-400 to-blue-500 rounded-2xl animate-spin-slow shadow-xl" />
+                    <div className="absolute -top-6 left-1/4 w-12 h-12 bg-white/30 backdrop-blur-sm rounded-lg animate-pulse" />
                   </div>
                 </div>
 
-                {/* Login Arrow Button */}
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
                   <Button
                     size="lg"
@@ -290,18 +314,10 @@ export default function LoginPage() {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        .animate-float-delayed {
-          animation: float-delayed 4s ease-in-out infinite;
-        }
-        .animate-bounce-slow {
-          animation: bounce-slow 2s ease-in-out infinite;
-        }
-        .animate-spin-slow {
-          animation: spin-slow 20s linear infinite;
-        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-float-delayed { animation: float-delayed 4s ease-in-out infinite; }
+        .animate-bounce-slow { animation: bounce-slow 2s ease-in-out infinite; }
+        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
       `}</style>
     </div>
   )
